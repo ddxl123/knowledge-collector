@@ -1,0 +1,5 @@
+word	phonetic	meaning
+abandon	əˈbændən	v. 放弃；抛弃
+abstract	ˈæbstrækt	adj. 抽象的；n. 摘要
+achieve	əˈtʃiːv	v. 实现；达到
+acquire	əˈkwaɪər	v. 获得；学到

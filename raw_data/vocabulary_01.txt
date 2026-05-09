@@ -1,0 +1,5 @@
+abandon	放弃，抛弃
+abstract	抽象的
+achieve	实现，达到
+acknowledge	承认
+acquire	获得
