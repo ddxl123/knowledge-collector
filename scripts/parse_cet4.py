@@ -10,7 +10,7 @@
 
 import sys, os, urllib.request
 sys.path.insert(0, os.path.dirname(__file__))
-from yida_utils import to_yida, validate, read_input, write_output, print_stats
+from yida_utils import to_yida, validate, read_input, write_output, print_stats, dedup
 
 CDN_URL = "https://cdn.jsdelivr.net/gh/KyleBing/english-vocabulary@master/3%20%E5%9B%9B%E7%BA%A7-%E4%B9%B1%E5%BA%8F.txt"
 DEFAULT_OUTPUT = os.path.join(os.path.dirname(__file__), "..", "raw_data", "cet4_high_freq.txt")
@@ -52,6 +52,7 @@ if __name__ == "__main__":
         content = fetch_content()
 
     items = parse(content)
+    items = dedup(items)
     print_stats(items)
 
     yida = to_yida(items, ["word", "meaning"])

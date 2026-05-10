@@ -15,7 +15,7 @@
 
 import sys, os
 sys.path.insert(0, os.path.dirname(__file__))
-from yida_utils import to_yida, validate, read_input, write_output, print_stats, parse_indented
+from yida_utils import to_yida, validate, read_input, write_output, print_stats, parse_indented, dedup
 
 def parse(content):
     return parse_indented(content)
@@ -29,6 +29,7 @@ if __name__ == "__main__":
 
     content = read_input(args.input)
     items = parse(content)
+    items = dedup(items, key_fields=["key"])
     print_stats(items)
 
     yida = to_yida(items, ["key", "details"])

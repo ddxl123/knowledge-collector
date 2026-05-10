@@ -8,7 +8,7 @@
 
 import sys, os
 sys.path.insert(0, os.path.dirname(__file__))
-from yida_utils import to_yida, validate, read_input, write_output, print_stats
+from yida_utils import to_yida, validate, read_input, write_output, print_stats, dedup
 
 def parse(content):
     """匹配 word - meaning（支持 - – — 三种破折号）"""
@@ -32,6 +32,7 @@ if __name__ == "__main__":
 
     content = read_input(args.input)
     items = parse(content)
+    items = dedup(items)
     print_stats(items)
 
     yida = to_yida(items, ["word", "meaning"])

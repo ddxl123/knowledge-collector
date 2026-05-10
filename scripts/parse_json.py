@@ -13,7 +13,7 @@
 
 import sys, os, json
 sys.path.insert(0, os.path.dirname(__file__))
-from yida_utils import to_yida, validate, read_input, write_output, print_stats
+from yida_utils import to_yida, validate, read_input, write_output, print_stats, dedup
 
 def parse(content, field_names=None):
     """解析 JSON 或 JSONL 内容。
@@ -83,6 +83,7 @@ if __name__ == "__main__":
 
     field_names = args.fields.split(",") if args.fields else None
     items, field_names = parse(content, field_names)
+    items = dedup(items)
     print_stats(items, {"字段": ", ".join(field_names)})
 
     yida = to_yida(items, field_names)

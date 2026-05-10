@@ -10,7 +10,7 @@
 
 import sys, os, json, re, urllib.request
 sys.path.insert(0, os.path.dirname(__file__))
-from yida_utils import to_yida, validate, read_input, write_output, print_stats
+from yida_utils import to_yida, validate, read_input, write_output, print_stats, dedup
 
 CDN_URL = "https://cdn.jsdelivr.net/gh/ruixiangcui/AGIEval@main/data/v1/gaokao-history.jsonl"
 DEFAULT_OUTPUT = os.path.join(os.path.dirname(__file__), "..", "raw_data", "gaokao_history.txt")
@@ -70,6 +70,7 @@ if __name__ == "__main__":
         content = fetch_content()
 
     items = parse(content)
+    items = dedup(items, key_fields=["title"])
     print_stats(items)
 
     yida = to_yida(items, ["title", "content", "tags", "source"])

@@ -11,7 +11,7 @@
 
 import sys, os, csv, io
 sys.path.insert(0, os.path.dirname(__file__))
-from yida_utils import to_yida, validate, read_input, write_output, print_stats
+from yida_utils import to_yida, validate, read_input, write_output, print_stats, dedup
 
 def detect_dialect(content, sample_lines=5):
     """自动检测 CSV 分隔符"""
@@ -78,6 +78,7 @@ if __name__ == "__main__":
     has_header = not args.no_header
 
     items, field_names = parse(content, field_names, has_header)
+    items = dedup(items)
     print_stats(items, {"字段": ", ".join(field_names)})
 
     yida = to_yida(items, field_names)

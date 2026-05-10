@@ -12,7 +12,7 @@
 
 import sys, os
 sys.path.insert(0, os.path.dirname(__file__))
-from yida_utils import to_yida, validate, read_input, write_output, print_stats
+from yida_utils import to_yida, validate, read_input, write_output, print_stats, dedup
 
 def parse(content):
     lines = [l for l in content.strip().splitlines() if l.strip()]
@@ -49,6 +49,7 @@ if __name__ == "__main__":
 
     content = read_input(args.input)
     items = parse(content)
+    items = dedup(items)
 
     # 根据实际字段数选择输出
     if items and "phonetic" in items[0]:
