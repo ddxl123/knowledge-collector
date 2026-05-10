@@ -1,0 +1,7 @@
+[
+  {"symbol": "H", "name": "氢", "number": 1, "note": "宇宙中最丰富的元素"},
+  {"symbol": "O", "name": "氧", "number": 8, "note": "地壳中含量最多的元素"},
+  {"symbol": "C", "name": "碳", "number": 6, "note": "有机物的基本骨架元素"},
+  {"symbol": "N", "name": "氮", "number": 7, "note": "空气中含量最多的气体"},
+  {"symbol": "Fe", "name": "铁", "number": 26, "note": "人体必需的微量元素"}
+]

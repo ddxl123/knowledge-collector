@@ -340,6 +340,14 @@ def _try_csv(content):
     try:
         dialect = csv.Sniffer().sniff("\n".join(lines[:5]), delimiters=',\t;|')
         reader = csv.reader(io.StringIO(content), dialect)
+    except csv.Error:
+        # sniffer 失败时，尝试逗号作为兜底分隔符
+        comma_counts = [l.count(',') for l in lines[:5]]
+        if len(set(comma_counts)) == 1 and comma_counts[0] >= 1:
+            reader = csv.reader(io.StringIO(content), delimiter=',')
+        else:
+            return None
+    try:
         rows = list(reader)
         if len(rows) < 2:
             return None
@@ -353,7 +361,7 @@ def _try_csv(content):
                 continue
             items.append({h: (row[i].strip() if i < len(row) else "") for i, h in enumerate(headers)})
         return items, headers
-    except (csv.Error, Exception):
+    except Exception:
         return None
 
 
