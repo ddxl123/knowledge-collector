@@ -13,6 +13,7 @@ import os
 import json
 import csv
 import io
+import codecs
 
 
 # ============================================================
@@ -104,8 +105,47 @@ def validate(yida_str, expected_fields=None):
 # 输入/输出
 # ============================================================
 
+def _detect_encoding(path, sample_size=8192):
+    """检测文件编码。优先尝试 UTF-8，回退到 GBK/GB2312。"""
+    # 尝试 UTF-8 (with BOM detection)
+    with open(path, 'rb') as f:
+        raw = f.read(sample_size)
+
+    # BOM 检测
+    if raw.startswith(codecs.BOM_UTF8):
+        return 'utf-8-sig'
+    if raw.startswith(codecs.BOM_UTF16_LE):
+        return 'utf-16-le'
+    if raw.startswith(codecs.BOM_UTF16_BE):
+        return 'utf-16-be'
+
+    # 尝试 UTF-8
+    try:
+        raw.decode('utf-8')
+        return 'utf-8'
+    except UnicodeDecodeError:
+        pass
+
+    # 尝试 GBK（覆盖 GB2312/GB18030）
+    try:
+        raw.decode('gbk')
+        return 'gbk'
+    except UnicodeDecodeError:
+        pass
+
+    # 尝试 GB18030
+    try:
+        raw.decode('gb18030')
+        return 'gb18030'
+    except UnicodeDecodeError:
+        pass
+
+    # 兜底
+    return 'utf-8'
+
+
 def read_input(path=None):
-    """读取输入内容。支持文件路径或 stdin。
+    """读取输入内容。支持文件路径或 stdin。自动检测编码。
 
     Args:
         path: 文件路径。None 则从 stdin 读取。
@@ -114,8 +154,12 @@ def read_input(path=None):
         文件内容字符串
     """
     if path and os.path.isfile(path):
-        with open(path, encoding="utf-8") as f:
-            return f.read()
+        enc = _detect_encoding(path)
+        with open(path, encoding=enc) as f:
+            content = f.read()
+        if enc != 'utf-8':
+            print(f"📝 检测到编码: {enc}", file=sys.stderr)
+        return content
     elif path:
         print(f"⚠️  文件不存在: {path}", file=sys.stderr)
         sys.exit(1)
@@ -413,9 +457,12 @@ def parse_markdown_table(content):
 def auto_parse(content, hint=None):
     """自动检测输入格式并解析。
 
+    支持直接传入 hint='csv'/'json' 等格式名，
+    也支持 hint 为解析模块名如 'parse_csv'。
+
     Args:
         content: 原始文本内容
-        hint: 格式提示（csv/json/tab/dash/markdown/numbered/indent）
+        hint: 格式提示（csv/json/tab/dash/markdown/numbered/indent 或 parse_csv 等）
 
     Returns:
         (items, field_names) 元组
@@ -423,6 +470,10 @@ def auto_parse(content, hint=None):
     content = content.strip()
     if not content:
         return [], []
+
+    # 标准化 hint（支持 'parse_csv' → 'csv'）
+    if hint and hint.startswith('parse_'):
+        hint = hint[6:]  # 去掉 'parse_' 前缀
 
     # 根据 hint 快速匹配
     if hint == 'csv':
@@ -443,6 +494,10 @@ def auto_parse(content, hint=None):
         return items, ["key", "details"]
 
     # 自动检测
+    # 忆哒格式（已转换过的）— 优先检测，避免被 JSON 解析器误判
+    if '▮' in content and '{{' in content:
+        return _parse_yida_auto(content)
+
     # JSON 数组或 JSONL
     if content.startswith('[') or content.startswith('{'):
         return _parse_json_auto(content)
@@ -478,6 +533,26 @@ def auto_parse(content, hint=None):
     # 兜底：按行解析
     items = [{"content": l.strip()} for l in lines if l.strip()]
     return items, ["content"]
+
+
+def _parse_yida_auto(content):
+    """解析已有的忆哒格式字符串，转回 items 列表。"""
+    fragments = content.split('▮')
+    items = []
+    field_names = None
+
+    for frag in fragments:
+        if not frag.strip():
+            continue
+        fields = re.findall(r'\{\{(.*?)\}\}', frag)
+        if not fields:
+            continue
+        if field_names is None:
+            field_names = [f'field_{i}' for i in range(len(fields))]
+        item = {fn: fv for fn, fv in zip(field_names, fields)}
+        items.append(item)
+
+    return items, field_names or ['content']
 
 
 def _try_csv(content):

@@ -1,1 +1,9 @@
-raw_data/cet4_high_freq.txt
+raw_data/
+output/
+*.pyc
+__pycache__/
+.DS_Store
+*.swp
+*.swo
+*~
+.venv/

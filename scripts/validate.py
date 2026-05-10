@@ -47,7 +47,7 @@ def main():
             print(f"❌ 验证失败：{len(errs)} 个问题", file=sys.stderr)
             for e in errs:
                 print(f"   • {e}", file=sys.stderr)
-        sys.exit(1 if args.strict else 0)
+        sys.exit(1)
 
 
 if __name__ == "__main__":
