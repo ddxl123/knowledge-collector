@@ -27,7 +27,14 @@ metadata:
 **先问再做。** 已知信息跳过。按顺序确认：
 1. 收集什么（学科、内容类型、数量）
 2. 数据来源（已有文件 / 网络 / 指定数据源）
-3. 版权确认（见末尾版权章节）
+3. **输出位置**（用户必须明确指定，例如：桌面、下载文件夹、某个项目目录）
+4. 版权确认（见末尾版权章节）
+
+**输出路径规则：**
+- 用户说「桌面」→ `~/Desktop/`
+- 用户说「下载」→ `~/Downloads/`
+- 用户给了具体路径 → 直接使用
+- 用户未指定 → **必须询问**，不要自行假设
 
 ### 2. 收集数据（优先级从高到低）
 
@@ -56,24 +63,31 @@ kc stats output.txt
 
 ### 5. 交付
 
-单文件 / 多文件 / 直接打印。命名：`{主题}_忆哒格式.txt`
+**输出到用户指定的位置。** 命名：`{主题}_忆哒格式.txt`
+
+```bash
+# 示例：用户要求放桌面
+kc fetch cet4 -o ~/Desktop/CET4词汇_忆哒格式.txt
+kc parse data.txt -o ~/Desktop/高考历史_忆哒格式.txt
+kc batch ./raw_data/ -o ~/Desktop/忆哒输出/
+```
 
 ---
 
 ## CLI 参考
 
 ```bash
-kc parse data.txt --format tab -o out.txt           # 解析
-kc parse data.txt --map old1:new1,old2:new2 -o out   # 解析+重命名字段
-kc parse data.txt --filter "tag=高考" -o out         # 解析+过滤
-kc validate out.txt --fields 2                        # 验证
-kc batch ./raw_data/ -o ./output/                     # 批量
-kc fetch cet4 -o cet4.txt                             # 获取预置数据源
-kc stats out.txt                                      # 统计
-kc clean broken.txt -o fixed.txt                      # 清洗修复
-kc convert data.txt --map word:vocab,meaning:def -o out  # 转换字段名
-kc merge a.txt b.txt -o merged.txt                    # 合并多个文件
-kc preview out.txt --limit 5                          # 预览
+kc parse data.txt --format tab -o ~/Desktop/out.txt        # 解析
+kc parse data.txt --map old1:new1,old2:new2 -o ~/Desktop/out.txt  # 解析+重命名字段
+kc parse data.txt --filter "tag=高考" -o ~/Desktop/out.txt  # 解析+过滤
+kc validate out.txt --fields 2                               # 验证
+kc batch ./raw_data/ -o ~/Desktop/忆哒输出/                   # 批量
+kc fetch cet4 -o ~/Desktop/CET4词汇_忆哒格式.txt              # 获取预置数据源
+kc stats out.txt                                             # 统计
+kc clean broken.txt -o fixed.txt                             # 清洗修复
+kc convert data.txt --map word:vocab,meaning:def -o out.txt  # 转换字段名
+kc merge a.txt b.txt -o merged.txt                           # 合并多个文件
+kc preview out.txt --limit 5                                 # 预览
 ```
 
 **格式参数** `--format`: `auto`(默认), `csv`, `json`, `tab`, `dash`, `markdown`, `numbered`, `indent`
