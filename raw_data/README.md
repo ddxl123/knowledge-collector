@@ -11,6 +11,18 @@
 | `vocabulary_01.txt` | 简单制表符 2 列 |
 | `vocabulary_02.txt` | 简单制表符 2 列 |
 
+## 在线数据源
+
+以下数据可通过 `kc fetch` 在线获取，不随仓库分发：
+
+| 命令 | 说明 |
+|---|---|
+| `kc fetch cet4` | CET-4 高频词汇 |
+| `kc fetch cet6` | CET-6 词汇 |
+| `kc fetch ielts` | IELTS 核心词汇 |
+| `kc fetch gaokao-history` | 高考历史真题 |
+| `kc fetch gaokao-geography` | 高考地理真题 |
+
 ## 输出格式
 
 所有示例脚本都输出忆哒批量生成碎片格式：

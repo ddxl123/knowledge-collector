@@ -1,4 +1,3 @@
-raw_data/
 output/
 *.pyc
 __pycache__/
@@ -7,3 +6,9 @@ __pycache__/
 *.swo
 *~
 .venv/
+
+# 在线获取的数据（用 kc fetch 重新下载）
+raw_data/cet4_high_freq.json
+raw_data/cet4_high_freq.txt
+raw_data/gaokao_history.json
+raw_data/gaokao_history.txt
