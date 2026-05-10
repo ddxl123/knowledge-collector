@@ -1,65 +1,46 @@
 #!/usr/bin/env python3
-"""解析 KyleBing/english-vocabulary 四级词汇表 → 忆哒格式
+"""CET-4/6/IETLS 词汇 → 忆哒格式 (thin wrapper)
 
-数据源: GitHub CDN（制表符分隔 word<TAB>meaning）
-用法:
-    python3 parse_cet4.py                     # 在线获取
-    python3 parse_cet4.py <input_file>        # 从本地文件
-    python3 parse_cet4.py -o out.txt          # 保存到文件
+数据源: KyleBing/english-vocabulary (GitHub)
 """
-
-import sys, os, urllib.request
+import sys, os
 sys.path.insert(0, os.path.dirname(__file__))
-from yida_utils import to_yida, validate, read_input, write_output, print_stats, dedup
+from yida_utils import (
+    read_input, write_output, to_yida, validate, auto_parse,
+    dedup, print_stats, retry_fetch,
+)
 
-CDN_URL = "https://cdn.jsdelivr.net/gh/KyleBing/english-vocabulary@master/3%20%E5%9B%9B%E7%BA%A7-%E4%B9%B1%E5%BA%8F.txt"
+CDN_URLS = {
+    'cet4': "https://cdn.jsdelivr.net/gh/KyleBing/english-vocabulary@master/3%20%E5%9B%9B%E7%BA%A7-%E4%B9%B1%E5%BA%8F.txt",
+    'cet6': "https://cdn.jsdelivr.net/gh/KyleBing/english-vocabulary@master/4%20%E5%85%AD%E7%BA%A7-%E4%B9%B1%E5%BA%8F.txt",
+    'ielts': "https://cdn.jsdelivr.net/gh/KyleBing/english-vocabulary@master/5%20%E9%9B%85%E6%80%9D%E6%A0%B8%E5%BF%83%E8%AF%8D%E6%B1%87.txt",
+}
+
 DEFAULT_OUTPUT = os.path.join(os.path.dirname(__file__), "..", "raw_data", "cet4_high_freq.txt")
 
-def fetch_content():
-    print("🌐 正在从 CDN 获取四级词汇数据...", file=sys.stderr)
-    req = urllib.request.Request(CDN_URL, headers={"User-Agent": "Mozilla/5.0"})
-    with urllib.request.urlopen(req, timeout=30) as resp:
-        return resp.read().decode("utf-8")
+def fetch_content(url=None):
+    url = url or CDN_URLS['cet4']
+    return retry_fetch(url)
 
 def parse(content):
-    items = []
-    seen = set()
-    for line in content.strip().splitlines():
-        line = line.strip()
-        if not line:
-            continue
-        parts = line.split("\t")
-        if len(parts) < 2:
-            continue
-        word = parts[0].strip()
-        meaning = parts[1].strip()
-        if word.lower() in seen:
-            continue
-        seen.add(word.lower())
-        items.append({"word": word, "meaning": meaning})
+    items, _ = auto_parse(content, hint='tab')
     return items
 
 if __name__ == "__main__":
     import argparse
-    ap = argparse.ArgumentParser(description="解析四级词汇表")
-    ap.add_argument("input", nargs="?", help="输入文件路径（不提供则在线获取）")
-    ap.add_argument("-o", "--output", default=DEFAULT_OUTPUT, help="输出文件路径")
+    ap = argparse.ArgumentParser()
+    ap.add_argument("input", nargs="?", help="本地文件（不提供则在线获取）")
+    ap.add_argument("-o", "--output", default=DEFAULT_OUTPUT)
+    ap.add_argument("--source", default="cet4", choices=list(CDN_URLS.keys()))
     args = ap.parse_args()
 
     if args.input:
         content = read_input(args.input)
     else:
-        content = fetch_content()
+        content = fetch_content(CDN_URLS[args.source])
 
     items = parse(content)
     items = dedup(items)
     print_stats(items)
-
     yida = to_yida(items, ["word", "meaning"])
-    ok, errs = validate(yida)
-    if not ok:
-        print("⚠️  格式验证警告:", file=sys.stderr)
-        for e in errs:
-            print(f"   {e}", file=sys.stderr)
-
     write_output(yida, args.output)
