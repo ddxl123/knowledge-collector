@@ -16,6 +16,8 @@ metadata:
 
 为忆哒学习应用收集学习资料，转换为忆哒批量生成碎片格式。
 
+**CLI 入口：** `{baseDir}/scripts/kc.py`（快捷方式 `{baseDir}/kc`）
+
 ## 工作流程
 
 ```
@@ -49,16 +51,21 @@ metadata:
 
 ### 3. 解析转换
 
-**判断数据类型**（看前 10 行）：
-- 有统一分隔符/编号/缩进？ → `kc parse --format <格式>`
-- 格式不规则但有规律？ → AI 先提取为 JSON → `kc parse`
-- 纯文本段落？ → AI 直接生成忆哒格式
+根据数据类型选择处理方式（看前 10 行判断）：
+
+**脚本直接解析：** 有统一分隔符/编号/缩进 → `kc parse --format <格式>`
+
+**脚本+AI结合：** 有结构化元数据但正文不规则 → 脚本拆分结构，AI 提取正文知识点
+
+**AI 辅助：** 格式不规则但有规律 → AI 先提取为 dict 列表 → `to_yida()` 转换
+
+**AI 直接生成：** 纯文本段落 → AI 提取知识点并生成忆哒格式字符串
 
 ### 4. 验证（必须）
 
 ```bash
-kc validate output.txt --fields N
-kc stats output.txt
+python3 {baseDir}/scripts/kc.py validate output.txt --fields N
+python3 {baseDir}/scripts/kc.py stats output.txt
 ```
 
 ### 5. 交付
@@ -66,10 +73,9 @@ kc stats output.txt
 **输出到用户指定的位置。** 命名：`{主题}_忆哒格式.txt`
 
 ```bash
-# 示例：用户要求放桌面
-kc fetch cet4 -o ~/Desktop/CET4词汇_忆哒格式.txt
-kc parse data.txt -o ~/Desktop/高考历史_忆哒格式.txt
-kc batch ./raw_data/ -o ~/Desktop/忆哒输出/
+python3 {baseDir}/scripts/kc.py fetch cet4 -o ~/Desktop/CET4词汇_忆哒格式.txt
+python3 {baseDir}/scripts/kc.py parse data.txt -o ~/Desktop/高考历史_忆哒格式.txt
+python3 {baseDir}/scripts/kc.py batch ./raw_data/ -o ~/Desktop/忆哒输出/
 ```
 
 ---
@@ -77,24 +83,24 @@ kc batch ./raw_data/ -o ~/Desktop/忆哒输出/
 ## CLI 参考
 
 ```bash
-kc parse data.txt --format tab -o ~/Desktop/out.txt        # 解析
-kc parse data.txt --map old1:new1,old2:new2 -o ~/Desktop/out.txt  # 解析+重命名字段
-kc parse data.txt --filter "tag=高考" -o ~/Desktop/out.txt  # 解析+过滤
-kc validate out.txt --fields 2                               # 验证
-kc batch ./raw_data/ -o ~/Desktop/忆哒输出/                   # 批量
-kc fetch cet4 -o ~/Desktop/CET4词汇_忆哒格式.txt              # 获取预置数据源
-kc stats out.txt                                             # 统计
-kc clean broken.txt -o fixed.txt                             # 清洗修复
-kc convert data.txt --map word:vocab,meaning:def -o out.txt  # 转换字段名
-kc merge a.txt b.txt -o merged.txt                           # 合并多个文件
-kc preview out.txt --limit 5                                 # 预览
+python3 {baseDir}/scripts/kc.py parse data.txt --format tab -o out.txt
+python3 {baseDir}/scripts/kc.py parse data.txt --map old1:new1 -o out.txt
+python3 {baseDir}/scripts/kc.py parse data.txt --filter "tag=高考" -o out.txt
+python3 {baseDir}/scripts/kc.py validate out.txt --fields 2
+python3 {baseDir}/scripts/kc.py batch ./raw_data/ -o ./output/
+python3 {baseDir}/scripts/kc.py fetch cet4 -o out.txt
+python3 {baseDir}/scripts/kc.py stats out.txt
+python3 {baseDir}/scripts/kc.py clean broken.txt -o fixed.txt
+python3 {baseDir}/scripts/kc.py convert data.txt --map word:vocab -o out.txt
+python3 {baseDir}/scripts/kc.py merge a.txt b.txt -o merged.txt
+python3 {baseDir}/scripts/kc.py preview out.txt --limit 5
 ```
 
-**格式参数** `--format`: `auto`(默认), `csv`, `json`, `tab`, `dash`, `markdown`, `numbered`, `indent`
+**格式** `--format`: `auto`(默认) `csv` `json` `tab` `dash` `markdown` `numbered` `indent`
 
-**过滤表达式** `--filter`: `field=value` / `field!=value` / `field~=regex`
+**过滤** `--filter`: `field=value` / `field!=value` / `field~=regex`
 
-**预置数据源** `kc fetch`: `cet4`, `cet6`, `ielts`, `gaokao-history`, `gaokao-geography`
+**数据源** `kc fetch`: `cet4` `cet6` `ielts` `gaokao-history` `gaokao-geography`
 
 ---
 
@@ -108,16 +114,9 @@ kc preview out.txt --limit 5                                 # 预览
 - 同批次字段数和顺序必须一致
 - 字段值内禁止 `{{` `}}` `▮`
 
-| 内容类型 | 推荐字段 |
-|---|---|
-| 词汇 | word, meaning |
-| 词汇+音标 | word, phonetic, meaning |
-| 选择题 | title, content, answer |
-| 知识卡片 | question, answer, tags |
-
 ---
 
-## Python API（高级用法）
+## Python API
 
 ```python
 import sys; sys.path.insert(0, "{baseDir}/scripts")
@@ -125,7 +124,7 @@ from yida_utils import to_yida, validate, write_output, auto_parse
 from yida_utils import dedup, clean_field, merge, convert_fields, filter_items
 from yida_utils import retry_fetch, batch_process
 
-# AI 提取为 items 后转换
+# AI 提取为 items 后转忆哒格式
 items = [{"word": "abandon", "meaning": "v. 放弃"}, ...]
 yida = to_yida(items, ["word", "meaning"])
 ok, errs = validate(yida, expected_fields=2)
@@ -138,7 +137,7 @@ write_output(yida, "output.txt")
 
 | 问题 | 策略 |
 |---|---|
-| `web_fetch` 返回空/不完整 | 切换 `browser` 工具 |
+| `web_fetch` 返回空 | 切换 `browser` 工具 |
 | GitHub CDN 超时 | `retry_fetch()` 自动重试 3 次 |
 | 编码乱码 | `read_input()` 自动检测 UTF-8/GBK/GB18030 |
 | 格式解析失败 | 换 `--format` 或 AI 辅助 |
@@ -146,17 +145,13 @@ write_output(yida, "output.txt")
 
 ## 版权合规
 
-所有风险等级均可收集，根据等级提示用户后继续。
-
 | 级别 | 说明 | 动作 |
 |---|---|---|
 | 🟢 低 | 公共领域、开放许可、事实数据 | 直接收集 |
 | 🟡 中 | 网站原创、用户生成内容 | 提示使用条款 |
 | 🔴 高 | 整本教材、付费课程、官方题库 | ⚠️ 强烈提示，用户确认后继续 |
 
-> ⚠️ 提示模板：该内容受版权保护（来源：xxx）。仅供个人学习，严禁商用和传播。是否继续？
-
-优先开放许可资源（CC0/CC-BY/公共领域）。记录来源（URL/作者/日期）。
+> ⚠️ 提示：该内容受版权保护（来源：xxx）。仅供个人学习，严禁商用和传播。是否继续？
 
 详见 `{baseDir}/docs/copyright-guide.md`。
 

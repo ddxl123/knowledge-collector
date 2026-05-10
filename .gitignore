@@ -7,8 +7,6 @@ __pycache__/
 *~
 .venv/
 
-# 在线获取的数据（用 kc fetch 重新下载）
-raw_data/cet4_high_freq.json
-raw_data/cet4_high_freq.txt
-raw_data/gaokao_history.json
-raw_data/gaokao_history.txt
+# 在线获取的大文件（用 kc fetch 重新下载）
+raw_data/cet4_high_freq.*
+raw_data/gaokao_history.*

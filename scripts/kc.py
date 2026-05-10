@@ -353,22 +353,37 @@ def cmd_merge(args):
 
 
 def cmd_preview(args):
-    """预览文件内容（不保存）。"""
+    """预览文件内容（不保存）。支持原始数据和忆哒格式。"""
     content = read_input(args.input)
     if not content.strip():
         print("⚠️  文件为空", file=sys.stderr)
         return 1
 
-    fragments = content.split("▮")
     limit = args.limit or 10
 
-    print(f"📊 共 {len(fragments)} 条，显示前 {min(limit, len(fragments))} 条:\n")
-    for i, frag in enumerate(fragments[:limit]):
-        fields = re.findall(r'\{\{(.*?)\}\}', frag)
-        print(f"  #{i+1}: {' | '.join(fields)}")
+    # 已是忆哒格式
+    if '▮' in content and '{{' in content:
+        fragments = content.split("▮")
+        print(f"📊 共 {len(fragments)} 条，显示前 {min(limit, len(fragments))} 条:\n")
+        for i, frag in enumerate(fragments[:limit]):
+            fields = re.findall(r'\{\{(.*?)\}\}', frag)
+            print(f"  #{i+1}: {' | '.join(fields)}")
+        if len(fragments) > limit:
+            print(f"\n  ... 还有 {len(fragments) - limit} 条")
+        return 0
 
-    if len(fragments) > limit:
-        print(f"\n  ... 还有 {len(fragments) - limit} 条")
+    # 原始数据 → 自动解析后预览
+    items, field_names = auto_parse(content)
+    if not items:
+        print("❌ 无法解析", file=sys.stderr)
+        return 1
+
+    print(f"📊 共 {len(items)} 条（字段: {', '.join(field_names)}），显示前 {min(limit, len(items))} 条:\n")
+    for i, item in enumerate(items[:limit]):
+        vals = [str(item.get(fn, '')) for fn in field_names]
+        print(f"  #{i+1}: {' | '.join(vals)}")
+    if len(items) > limit:
+        print(f"\n  ... 还有 {len(items) - limit} 条")
     return 0
 
 
