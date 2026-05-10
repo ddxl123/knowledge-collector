@@ -16,6 +16,18 @@ metadata:
 
 为忆哒学习应用收集学习资料，转换为忆哒批量生成碎片格式。
 
+## 核心理念
+
+**没有万能解析器。** 收到数据后，先分析格式特征，再选择合适的方式处理：
+
+| 数据类型 | 处理方式 | 特点 |
+|---|---|---|
+| 结构化数据 | 写 Python 解析脚本 | 快速、可复现 |
+| 半结构化/复杂数据 | AI 辅助提取 + 脚本转换 | 灵活、兜底 |
+| 非结构化数据 | AI 直接提取并生成忆哒格式 | 无需脚本 |
+
+判断顺序：先看前 10 行 → 有统一分隔符/缩进/编号？→ 用脚本解析 → 格式不规则？→ AI 辅助 → 纯文本段落？→ AI 直接生成。
+
 ## 快速参考
 
 **CLI 统一入口**（推荐）:
@@ -92,7 +104,9 @@ browser(action="act", targetId="data", kind="evaluate", fn="document.querySelect
 
 ### Step 3: 解析转换
 
-**快速识别格式**（看前 10 行）：
+先看前 10 行，判断数据类型，再选择处理方式：
+
+#### 结构化数据 → 脚本解析
 
 | 特征 | 格式 | 命令 |
 |---|---|---|
@@ -105,26 +119,31 @@ browser(action="act", targetId="data", kind="evaluate", fn="document.querySelect
 | 缩进层级 | 词典式 | `--format indent` |
 | 不确定 | 自动检测 | `--format auto`（默认） |
 
-**使用 CLI 解析**：
 ```bash
 python3 {baseDir}/scripts/kc.py parse data.txt --format tab -o output.txt
 python3 {baseDir}/scripts/kc.py parse data.csv --fields word,meaning -o output.txt
 python3 {baseDir}/scripts/kc.py parse data.json --fields title,content,answer -o output.txt
 ```
 
-**Python API**（复杂场景）：
+#### 半结构化/复杂数据 → AI 辅助 + 脚本转换
+
+格式不规则但有规律时，让 AI 先提取为 JSON，再用脚本转为忆哒格式：
+
 ```python
 import sys, os
 sys.path.insert(0, "{baseDir}/scripts")
-from yida_utils import to_yida, validate, read_input, write_output, auto_parse, dedup
+from yida_utils import to_yida, validate, write_output
 
-content = read_input("input.txt")
-items, field_names = auto_parse(content)  # 或手动解析
-items = dedup(items)
-yida = to_yida(items, field_names)
-ok, errs = validate(yida, expected_fields=len(field_names))
+# AI 已提取为 items 列表
+items = [{"word": "abandon", "meaning": "v. 放弃"}, ...]
+yida = to_yida(items, ["word", "meaning"])
+ok, errs = validate(yida)
 write_output(yida, "output.txt")
 ```
+
+#### 非结构化数据 → AI 直接生成
+
+纯文本/段落/文章，让 AI 直接从内容中提取知识点并输出忆哒格式字符串。
 
 **yida_utils.py 函数速查**：
 
